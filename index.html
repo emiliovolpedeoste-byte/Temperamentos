@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Qual é o seu temperamento?</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: #1a1a2e;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+  }
+
+  .screen { display: none; width: 100%; max-width: 420px; }
+  .screen.active { display: flex; flex-direction: column; align-items: center; }
+
+  #screen-intro { text-align: center; gap: 24px; }
+  .intro-emoji { font-size: 64px; line-height: 1; }
+  .intro-title { font-size: 28px; font-weight: 700; color: #fff; line-height: 1.2; }
+  .intro-sub { font-size: 15px; color: rgba(255,255,255,0.6); line-height: 1.6; }
+  .intro-meta { font-size: 13px; color: rgba(255,255,255,0.35); display: flex; gap: 16px; justify-content: center; }
+
+  .btn-start {
+    margin-top: 8px; background: #7c6ff7; color: #fff; border: none;
+    border-radius: 50px; padding: 16px 48px; font-size: 17px; font-weight: 600;
+    cursor: pointer; width: 100%; max-width: 280px; transition: transform 0.1s, background 0.2s;
+  }
+  .btn-start:active { transform: scale(0.97); background: #6558e8; }
+
+  #screen-quiz { gap: 20px; }
+
+  .top-row { width: 100%; display: flex; align-items: center; justify-content: space-between; margin-bottom: -8px; }
+  .btn-back {
+    background: transparent; border: none; color: rgba(255,255,255,0.4);
+    font-size: 13px; font-weight: 600; cursor: pointer; padding: 4px 0;
+    display: flex; align-items: center; gap: 5px; transition: color 0.15s;
+  }
+  .btn-back:active { color: rgba(255,255,255,0.9); }
+  .btn-back.hidden { visibility: hidden; pointer-events: none; }
+  .time-badge {
+    font-size: 12px; font-weight: 600; color: rgba(255,255,255,0.35);
+    background: rgba(255,255,255,0.07); border-radius: 50px; padding: 4px 10px;
+  }
+
+  .progress-wrap { width: 100%; display: flex; flex-direction: column; gap: 6px; }
+  .progress-label { font-size: 13px; color: rgba(255,255,255,0.5); text-align: right; }
+  .progress-bar { width: 100%; height: 6px; background: rgba(255,255,255,0.12); border-radius: 10px; overflow: hidden; }
+  .progress-fill { height: 100%; background: #7c6ff7; border-radius: 10px; transition: width 0.3s ease; }
+
+  .card-area { width: 100%; min-height: 200px; display: flex; align-items: center; justify-content: center; }
+
+  .card {
+    background: #fff; border-radius: 20px; padding: 32px 28px; width: 100%;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.4); text-align: center; position: relative;
+    transition: transform 0.18s ease, opacity 0.18s ease;
+  }
+  .card.exit-yes { transform: translateX(120%) rotate(15deg); opacity: 0; }
+  .card.exit-no  { transform: translateX(-120%) rotate(-15deg); opacity: 0; }
+  .card.enter    { transform: scale(0.88); opacity: 0; }
+
+  .card-prev-answer { position: absolute; top: 14px; right: 16px; font-size: 16px; opacity: 0.2; }
+  .card-number { font-size: 12px; font-weight: 600; color: #bbb; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 16px; }
+  .card-text   { font-size: 19px; font-weight: 600; color: #1a1a2e; line-height: 1.45; }
+
+  .hint-row { display: flex; justify-content: space-between; width: 100%; padding: 0 8px; }
+  .hint { font-size: 12px; color: rgba(255,255,255,0.35); }
+
+  .btn-row { display: flex; gap: 16px; width: 100%; justify-content: center; }
+  .btn-no, .btn-yes {
+    flex: 1; max-width: 160px; height: 60px; border: none; border-radius: 50px;
+    font-size: 22px; cursor: pointer; font-weight: 700; transition: transform 0.1s;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+  }
+  .btn-no  { background: rgba(255,255,255,0.08); color: #ff6b6b; border: 2px solid rgba(255,107,107,0.35); }
+  .btn-yes { background: #7c6ff7; color: #fff; }
+  .btn-no:active  { transform: scale(0.94); }
+  .btn-yes:active { transform: scale(0.94); }
+  .btn-label { font-size: 13px; font-weight: 600; }
+
+  #screen-result { gap: 20px; text-align: center; padding-bottom: 32px; }
+  .result-emoji { font-size: 72px; line-height: 1; }
+  .result-title { font-size: 14px; font-weight: 600; color: rgba(255,255,255,0.5); text-transform: uppercase; letter-spacing: 2px; }
+  .result-name  { font-size: 36px; font-weight: 800; color: #fff; line-height: 1; }
+  .result-desc  { font-size: 15px; color: rgba(255,255,255,0.65); line-height: 1.6; padding: 0 8px; }
+
+  .bars-card { background: rgba(255,255,255,0.06); border-radius: 16px; padding: 20px; width: 100%; display: flex; flex-direction: column; gap: 14px; }
+  .bar-row { display: flex; flex-direction: column; gap: 6px; }
+  .bar-meta { display: flex; justify-content: space-between; font-size: 13px; font-weight: 600; }
+  .bar-label { color: rgba(255,255,255,0.8); }
+  .bar-pct   { color: rgba(255,255,255,0.5); }
+  .bar-track { width: 100%; height: 10px; background: rgba(255,255,255,0.1); border-radius: 10px; overflow: hidden; }
+  .bar-fill  { height: 100%; border-radius: 10px; transition: width 1s ease; }
+
+  .btn-restart {
+    background: transparent; color: rgba(255,255,255,0.5);
+    border: 1.5px solid rgba(255,255,255,0.2); border-radius: 50px;
+    padding: 12px 32px; font-size: 14px; font-weight: 600; cursor: pointer;
+  }
+  .btn-restart:active { color: #fff; border-color: rgba(255,255,255,0.5); }
+</style>
+</head>
+<body>
+
+<div id="screen-intro" class="screen active">
+  <div class="intro-emoji">🧠</div>
+  <div class="intro-title">Qual é o seu<br>temperamento?</div>
+  <div class="intro-sub">Responda com sinceridade.<br>Descubra o que te move por dentro.</div>
+  <div class="intro-meta">
+    <span>📋 83 perguntas</span>
+    <span>⏱ ~5 minutos</span>
+  </div>
+  <button class="btn-start" onclick="startQuiz()">Começar agora</button>
+</div>
+
+<div id="screen-quiz" class="screen">
+  <div class="top-row">
+    <button class="btn-back hidden" id="btn-back" onclick="goBack()">← voltar</button>
+    <div class="time-badge" id="time-badge">~5 min</div>
+  </div>
+  <div class="progress-wrap">
+    <div class="progress-label" id="progress-label">1 / 83</div>
+    <div class="progress-bar"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
+  </div>
+  <div class="card-area">
+    <div class="card" id="card">
+      <div class="card-prev-answer" id="card-prev-answer"></div>
+      <div class="card-number" id="card-number">01</div>
+      <div class="card-text" id="card-text"></div>
+    </div>
+  </div>
+  <div class="hint-row">
+    <div class="hint">← Não sou assim</div>
+    <div class="hint">Sou assim →</div>
+  </div>
+  <div class="btn-row">
+    <button class="btn-no"  onclick="answer(false)"><span>✕</span><span class="btn-label">Não</span></button>
+    <button class="btn-yes" onclick="answer(true)"><span class="btn-label">Sim</span><span>✓</span></button>
+  </div>
+</div>
+
+<div id="screen-result" class="screen">
+  <div class="result-emoji" id="result-emoji"></div>
+  <div>
+    <div class="result-title">seu temperamento</div>
+    <div class="result-name" id="result-name"></div>
+  </div>
+  <div class="result-desc" id="result-desc"></div>
+  <div class="bars-card" id="bars-card"></div>
+  <button class="btn-restart" onclick="restart()">Refazer o teste</button>
+</div>
+
+<script>
+// Números originais do questionário do Dr. Italo (83 selecionados)
+const originalNums = [1,2,3,4,5,6,7,8,9,10,13,14,15,17,22,25,27,28,30,36,38,42,44,49,50,58,59,60,65,68,70,71,73,79,81,85,86,88,90,99,104,105,106,108,109,112,113,119,121,122,129,131,135,138,147,148,157,159,160,169,172,173,175,183,186,187,190,191,197,201,202,204,205,206,209,210,212,215,218,226,227,230,232];
+
+const questions = [
+  "Quando apresentado a uma ideia, uma pessoa ou uma situação, eu reajo rapidamente.",
+  "Quando apresentado a uma ideia, uma pessoa ou uma situação, eu demoro a reagir.",
+  "Quando apresentado a uma ideia, uma pessoa ou uma situação, eu reajo fortemente (intensamente).",
+  "Quando apresentado a uma ideia, uma pessoa ou uma situação, eu não reajo intensamente.",
+  "Quando apresentado a uma ideia, uma pessoa ou uma situação, desejo agir imediatamente.",
+  "Quando apresentado a uma ideia, uma pessoa ou uma situação, eu permaneço calmo e espero para agir.",
+  "Eu não reajo inicialmente, mas minha reação vai aumentando aos poucos de intensidade.",
+  "As impressões duram muito tempo. Guardo as emoções sentidas. Mesmo depois de tempos, torno a sentir a mesma emoção.",
+  "As impressões duram pouco tempo. Não volto a me emocionar quando a situação é mencionada. Lembro, mas não me empolgo.",
+  "Acolhedor.",
+  "Introspectivo. Não tenho necessidade de falar para confirmar meus pensamentos.",
+  "Facilmente provocado.",
+  "Se provocado, vou retaliar.",
+  "Meticuloso.",
+  "Detalhista.",
+  "Determinado.",
+  "Inseguro.",
+  "Aprecio o isolamento.",
+  "Desfruto a companhia das pessoas.",
+  "Irrito-me com facilidade.",
+  "Extrovertido.",
+  "Vingativo.",
+  "Líder autodeclarado.",
+  "Feliz.",
+  "Otimista.",
+  "Calmo.",
+  "Criativo.",
+  "Assumo o comando.",
+  "Odeio conflitos.",
+  "Sentimental.",
+  "Demoro a fazer amizades.",
+  "Faço amigos com facilidade.",
+  "Lógico.",
+  "Artístico.",
+  "Pensador.",
+  "Guiado por regras.",
+  "Perseverante.",
+  "Reservado.",
+  "\"Tenho sempre a razão\".",
+  "Difícil de agradar.",
+  "Brincalhão.",
+  "Obstinado.",
+  "Pessimista.",
+  "Corajoso.",
+  "Tímido.",
+  "Impulsivo.",
+  "Prefiro seguir.",
+  "Profundamente estável.",
+  "\"Copo meio cheio\".",
+  "\"Copo meio vazio\".",
+  "Bem-humorado.",
+  "Em sintonia com os sentimentos dos outros.",
+  "Ambicioso.",
+  "Voltado para a ação.",
+  "Prefiro a rotina.",
+  "Me vejo inferior aos outros em muitas situações.",
+  "Autoconfiante.",
+  "Sensível.",
+  "Magoo-me com facilidade.",
+  "Mediador de conflitos e pessoas.",
+  "Competitivo.",
+  "Sacrificado.",
+  "Adaptável.",
+  "Sincero.",
+  "Fiel.",
+  "Idealista.",
+  "Profundo.",
+  "Faço acontecer, sou empreendedor.",
+  "Perfeccionista.",
+  "Mantenho a calma sob pressão.",
+  "Espiritual.",
+  "Pensativo.",
+  "Procrastinador.",
+  "Dócil.",
+  "Exijo reconhecimento.",
+  "Preciso de encorajamento.",
+  "Preciso de amigos.",
+  "Gosto de estrutura e procedimentos bem definidos.",
+  "Gosto de confronto.",
+  "Gosto mais do caminho do que do objetivo.",
+  "Gosto mais do objetivo do que do caminho.",
+  "Movido por desafios.",
+  "Caseiro."
+];
+
+// Mapeamento número original -> índice sequencial (1-based) no quiz
+const origToIdx = {};
+originalNums.forEach((n, i) => { origToIdx[n] = i + 1; });
+
+function mapToIdx(arr) { return arr.map(n => origToIdx[n]).filter(Boolean); }
+
+const origColerico    = [1,3,5,8,11,14,15,25,30,36,37,38,42,43,44,50,53,54,56,60,66,67,73,81,83,84,86,90,92,96,105,108,112,115,116,117,118,121,123,124,125,127,130,132,133,134,135,138,140,143,144,154,155,156,157,158,167,168,172,176,177,183,191,192,194,196,200,207,209,213,218,219,222,224,227,230];
+const origSanguineo   = [1,3,5,9,10,11,14,18,23,26,29,30,32,36,37,38,41,43,46,47,48,49,50,56,59,68,69,71,76,77,79,80,82,87,89,91,92,93,94,95,104,107,110,112,113,114,116,117,118,120,121,129,131,136,138,139,142,144,145,146,149,152,157,159,160,161,175,178,179,180,203,206,212,214,220,223,226,228,231];
+const origMelancolico = [2,7,8,12,13,16,17,19,20,21,22,24,27,28,31,33,34,39,40,42,48,51,52,54,57,62,63,70,72,73,74,75,78,79,80,81,88,98,99,101,106,109,111,122,131,133,141,148,150,151,153,159,163,165,166,170,173,176,181,182,184,186,187,190,193,197,202,204,208,210,215,216,221,222,227,229];
+const origFleumatico  = [2,4,6,9,10,21,26,28,30,31,35,39,45,52,55,58,61,63,64,65,68,70,72,75,78,85,88,97,98,100,102,103,106,107,110,111,113,119,122,126,128,129,131,137,139,147,153,160,162,166,169,171,173,174,175,185,186,188,189,195,198,199,201,204,205,206,210,211,215,217,219,221,225,226,228,232];
+
+const scoring = {
+  colerico:    mapToIdx(origColerico),
+  sanguineo:   mapToIdx(origSanguineo),
+  melancolico: mapToIdx(origMelancolico),
+  fleumatico:  mapToIdx(origFleumatico),
+};
+
+const info = {
+  colerico:    { emoji: "🔥", name: "Colérico",    barColor: "#ff6b35", desc: "Você é movido pela ação e pelos resultados. Determinado, líder nato e focado em objetivos. Reage rápido, pensa grande e não tem medo de assumir o comando." },
+  sanguineo:   { emoji: "✨", name: "Sanguíneo",   barColor: "#ffbe0b", desc: "Você irradia energia e alegria. Sociável, otimista e criativo, adora estar com pessoas e viver novas experiências. A vida ao seu redor fica mais animada." },
+  melancolico: { emoji: "🌙", name: "Melancólico", barColor: "#4cc9f0", desc: "Você é profundo, analítico e idealista. Perfeccionista por natureza, sente as emoções com intensidade e tem um mundo interior rico e complexo." },
+  fleumatico:  { emoji: "🌊", name: "Fleumático",  barColor: "#06d6a0", desc: "Você é o pilar de estabilidade. Calmo, paciente e diplomático, mantém a serenidade mesmo sob pressão e é um mediador natural de conflitos." },
+};
+
+const TOTAL   = questions.length;
+const AVG_SEC = 4;
+
+let current   = 0;
+let scores    = { colerico: 0, sanguineo: 0, melancolico: 0, fleumatico: 0 };
+let history   = [];
+let animating = false;
+
+function startQuiz() { showScreen('screen-quiz'); renderCard(); }
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+function formatTime(secs) {
+  if (secs < 90) return '< 1 min';
+  return '~' + Math.round(secs / 60) + ' min';
+}
+
+function renderCard() {
+  const pct = Math.round((current / TOTAL) * 100);
+  document.getElementById('progress-fill').style.width = pct + '%';
+  document.getElementById('progress-label').textContent = (current + 1) + ' / ' + TOTAL;
+  document.getElementById('time-badge').textContent = formatTime((TOTAL - current) * AVG_SEC);
+  document.getElementById('card-number').textContent = String(current + 1).padStart(2, '0');
+  document.getElementById('card-text').textContent = questions[current];
+  const prev = history[current];
+  document.getElementById('card-prev-answer').textContent = prev !== undefined ? (prev ? '✓' : '✕') : '';
+  const back = document.getElementById('btn-back');
+  current > 0 ? back.classList.remove('hidden') : back.classList.add('hidden');
+  document.getElementById('card').classList.remove('exit-yes', 'exit-no', 'enter');
+}
+
+function applyScore(qIdx, add) {
+  for (const t in scoring) {
+    if (scoring[t].includes(qIdx)) scores[t] = Math.max(0, scores[t] + (add ? 1 : -1));
+  }
+}
+
+function answer(yes) {
+  if (animating) return;
+  animating = true;
+  const qIdx = current + 1;
+  if (history[current] !== undefined && history[current]) applyScore(qIdx, false);
+  history[current] = yes;
+  if (yes) applyScore(qIdx, true);
+  const card = document.getElementById('card');
+  card.classList.add(yes ? 'exit-yes' : 'exit-no');
+  setTimeout(() => {
+    current++;
+    if (current >= TOTAL) { showResult(); return; }
+    card.classList.remove('exit-yes', 'exit-no');
+    card.classList.add('enter');
+    renderCard();
+    requestAnimationFrame(() => requestAnimationFrame(() => { card.classList.remove('enter'); animating = false; }));
+  }, 200);
+}
+
+function goBack() {
+  if (animating || current === 0) return;
+  animating = true;
+  const card = document.getElementById('card');
+  card.classList.add('exit-no');
+  setTimeout(() => {
+    current--;
+    card.classList.remove('exit-no');
+    card.classList.add('enter');
+    renderCard();
+    requestAnimationFrame(() => requestAnimationFrame(() => { card.classList.remove('enter'); animating = false; }));
+  }, 200);
+}
+
+function showResult() {
+  const totals = {};
+  for (const t in scoring) totals[t] = scoring[t].length;
+  const pcts = {};
+  for (const t in scores) pcts[t] = Math.round((scores[t] / totals[t]) * 100);
+  const dominant = Object.keys(pcts).reduce((a, b) => pcts[a] > pcts[b] ? a : b);
+  const d = info[dominant];
+  document.getElementById('result-emoji').textContent = d.emoji;
+  document.getElementById('result-name').textContent  = d.name;
+  document.getElementById('result-desc').textContent  = d.desc;
+  const order = Object.keys(pcts).sort((a, b) => pcts[b] - pcts[a]);
+  const barsCard = document.getElementById('bars-card');
+  barsCard.innerHTML = '';
+  order.forEach(t => {
+    const ti = info[t];
+    const row = document.createElement('div');
+    row.className = 'bar-row';
+    row.innerHTML = `<div class="bar-meta"><span class="bar-label">${ti.emoji} ${ti.name}</span><span class="bar-pct">${pcts[t]}%</span></div><div class="bar-track"><div class="bar-fill" style="width:0%;background:${ti.barColor}" data-pct="${pcts[t]}"></div></div>`;
+    barsCard.appendChild(row);
+  });
+  showScreen('screen-result');
+  setTimeout(() => { document.querySelectorAll('.bar-fill').forEach(el => { el.style.width = el.dataset.pct + '%'; }); }, 100);
+}
+
+function restart() {
+  current = 0; scores = { colerico: 0, sanguineo: 0, melancolico: 0, fleumatico: 0 };
+  history = []; animating = false; showScreen('screen-intro');
+}
+</script>
+</body>
+</html>
